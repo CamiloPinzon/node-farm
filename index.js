@@ -23,31 +23,62 @@ const url = require('url')
 // console.log('Reading file ...');
 
 // ********** SERVER ********** //
+const replaceTemplate = (temp, product) => {
+  let output = temp.replace(/{%PRODUCT_NAME%}/g, product.productName)
+  output = output.replace(/{%PRODUCT_ICON%}/g, product.image)
+  output = output.replace(/{%PRODUCT_QUANTITY%}/g, product.quantity)
+  output = output.replace(/{%PRODUCT_PRICE%}/g, product.price)
+  output = output.replace(/{%PRODUCT_FROM%}/g, product.from)
+  output = output.replace(/{%PRODUCT_NUTRIENTS%}/g, product.nutrients)
+  output = output.replace(/{%PRODUCT_DESCRIPTION%}/g, product.description)
+  output = output.replace(/{%PRODUCT_ID%}/g, product.id)
 
+  if (!product.organic) {
+    output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic')
+  }
+
+  return output
+}
+
+const tempOverview = fs.readFileSync(
+  `${__dirname}/templates/template-overview.html`,
+  'utf-8'
+)
+const tempCard = fs.readFileSync(
+  `${__dirname}/templates/template-card.html`,
+  'utf-8'
+)
+const tempProduct = fs.readFileSync(
+  `${__dirname}/templates/template-product.html`,
+  'utf-8'
+)
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8')
 const dataObj = JSON.parse(data)
 
 const server = http.createServer((req, res) => {
-  console.log(req.url)
   const pathName = req.url
   switch (pathName) {
     case '/':
       res.writeHead(200, {
         'Content-type': 'text/html',
       })
-      res.end('<h1>This is HOME</h1>')
+      const cardsHtml = dataObj
+        .map((el) => replaceTemplate(tempCard, el))
+        .join('')
+      const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml)
+      res.end(output)
       break
     case '/overview':
       res.writeHead(200, {
         'Content-type': 'text/html',
       })
-      res.end('<h1>This is OVERVIEW</h1>')
+      res.end(tempOverview)
       break
     case '/product':
       res.writeHead(200, {
         'Content-type': 'text/html',
       })
-      res.end('<h1>This is PRODUCT</h1>')
+      res.end(tempProduct)
       break
     case '/api':
       res.writeHead(200, {
